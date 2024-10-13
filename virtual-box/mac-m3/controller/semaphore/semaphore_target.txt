@@ -1,0 +1,9 @@
+# 1. cd to /etc/sudoers.d
+
+2. Create file name as ${username}
+sudo vi ${username}
+```
+ubuntu ALL=(ALL) NOPASSWD: ALL
+```
+3. Grant permission
+chmod 440 ubuntu

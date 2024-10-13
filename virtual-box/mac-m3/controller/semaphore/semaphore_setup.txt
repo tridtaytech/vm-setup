@@ -1,0 +1,80 @@
+################# 1. Setup Database ################### 
+# Check user
+cat /etc/os-release
+# add user
+sudo adduser --system --group --home /home/semaphore semaphore
+# Verify user
+tail /etc/passwd
+# Update
+sudo apt update
+# Install mariadb
+sudo apt install mariadb-server
+# Verify
+sudo mariadb
+# Better secure mariadb(Minimum secure)
+sudo mysql_secure_installation
+# Create DB for semaphore
+CREATE DATABASE semaphore_db;
+SHOW DATABASES;
+# Create Database user 
+GRANT ALL PRIVILEGES ON semaphore_db.* TO semaphore_user@localhost IDENTIFIED BY 'password';
+FLUSH PRIVILEGES;
+################# 2. Setup Semaphore ################### 
+# 1. Go to github : https://github.com/semaphoreui/semaphore/releases/tag/v2.10.22
+# 2. Copy link and use 
+wget https://github.com/semaphoreui/semaphore/releases/download/v2.10.22/semaphore_2.10.22_linux_arm64.deb
+# 3. Install semaphore
+sudo apt install ./semaphore_2.10.22_linux_arm64.deb
+# 4. Setup semaphore
+semaphore setup
+# User : ubuntu , Email : ubuntu@mail.com, Pass : password
+# 5. Change owner of config file to semaphore user
+sudo chown semaphore:semaphore config.json
+# 6. Create folder for configuration file
+sudo mkdir /etc/semaphore
+sudo chown semaphore:semaphore /etc/semaphore
+sudo mv config.json /etc/semaphore
+# 7. Install ansible
+sudo apt install ansible
+# 8. Verify installation
+semaphore server --config /etc/semaphore/config.json
+################# 3. Setup Semaphore as systemd ################### 
+# 1. Create semaphore.service
+sudo vi /etc/systemd/system/semaphore.service 
+
+[Unit]
+Description=Semaphore Ansible
+Documentation=https://github.com/semaphoreui/semaphore
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=/usr/bin/semaphore
+ConditionPathExists=/etc/semaphore/config.json
+
+[Service]
+Type=simple
+ExecReload=/bin/kill -HUP $MAINPID
+ExecStart=/usr/bin/semaphore server --config=/etc/semaphore/config.json
+SyslogIdentifier=semaphore
+Restart=always
+RestartSec=10s
+User=semaphore
+Group=semaphore
+
+[Install]
+WantedBy=multi-user.target
+
+# 2. Reload systemd
+sudo systemctl daemon-reload
+
+# 3. Checking systemd
+systemctl status semaphore.service
+
+# 4. Enable
+sudo systemctl enable semaphore.service
+
+# 5. Start
+sudo systemctl start semaphore.service
+
+
+
+
